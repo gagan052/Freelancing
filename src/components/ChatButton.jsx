@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useChat } from '../contexts/ChatContext';
 import { FaComments } from 'react-icons/fa';
 
@@ -6,14 +5,12 @@ function ChatButton() {
   const { isOpen, setIsOpen } = useChat();
 
   return (
-    <motion.button
+    <button
       onClick={() => setIsOpen(!isOpen)}
-      className="fixed bottom-8 right-8 p-4 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition-colors"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
+      className="fixed bottom-8 right-8 p-4 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition-all duration-200 hover:scale-110 active:scale-95"
     >
       <FaComments className="text-2xl" />
-    </motion.button>
+    </button>
   );
 }
 

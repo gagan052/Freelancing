@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
@@ -14,10 +14,9 @@ import SignLanguageCoding from './components/SignLanguageCoding';
 import Community from './pages/Community';
 import { ChatProvider } from './contexts/ChatContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 function App() {
-  const location = useLocation();
-
   useEffect(() => {
     // Initial page load animation
     const content = document.querySelector('main');
@@ -40,28 +39,30 @@ function App() {
     return () => {
       gsap.killTweensOf([content, 'body']);
     };
-  }, [location.pathname]);
+  }, []);
 
   return (
-    <AuthProvider>
-      <ChatProvider>
-        <ErrorBoundary>
-          <MainLayout>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/jobs" element={<Jobs />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/hire" element={<Hire />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/sign-language-coding" element={<SignLanguageCoding />} />
-              <Route path="/community" element={<Community />} />
-            </Routes>
-          </MainLayout>
-        </ErrorBoundary>
-      </ChatProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ChatProvider>
+          <NotificationProvider>
+            <MainLayout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/jobs" element={<Jobs />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/hire" element={<Hire />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/sign-language-coding" element={<SignLanguageCoding />} />
+                <Route path="/community" element={<Community />} />
+              </Routes>
+            </MainLayout>
+          </NotificationProvider>
+        </ChatProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

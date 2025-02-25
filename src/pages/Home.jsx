@@ -15,8 +15,25 @@ import ChatBubble from '../components/ChatBubble';
 import Chat from '../components/Chat';
 import ChatButton from '../components/ChatButton';
 import { useChat } from '../contexts/ChatContext';
+import { supabase } from '../config/supabaseClient';
+
+
 
 function Home() {
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    // Check if Supabase environment variables are loaded
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      setError(new Error('Missing Supabase configuration. Please check your environment variables.'));
+    }
+  }, []);
+
+  // Add error boundary
+  if (error) {
+    return <div className="text-red-600 p-4">Error: {error.message}</div>
+  }
+
   const navigate = useNavigate();
   const mainRef = useRef(null);
   const heroRef = useRef(null);
@@ -289,8 +306,9 @@ function Home() {
                     loop
                     muted
                     playsInline
+                    
                   >
-                    <source src="/videos/platform-demo.mp4" type="video/mp4" />
+                    <source src="src/videos/platform-demo.mp4" type="video/mp4" />
                   </video>
 
 
@@ -1349,42 +1367,143 @@ function Home() {
   };
 
   const CategoriesSection = () => {
+    const [selectedCategory, setSelectedCategory] = useState(null);
+
     const categories = [
       { 
-        name: 'Web Development',
-        icon: "https://replicate.delivery/pbxt/U9q7AtRXJlZqm1mzkHQpqYrLh5UiDtk39B0YGPFynm3hE7FC/out-0.png", // Modern code icon
+        name: 'Graphics & Design',
+        icon: "🎨",
         count: '850+',
         color: 'purple',
-        skills: ['React', 'Node.js', 'Python', 'WordPress'],
-        description: 'Build accessible and responsive web applications',
-        topCompanies: ['Google', 'Microsoft', 'Amazon']
+        skills: ['UI/UX Design', 'Logo Design', 'Illustration', 'Branding'],
+        description: 'Create stunning visual designs and branding',
+        topCompanies: ['Adobe', 'Canva', 'Figma']
       },
       {
-        name: 'Content Writing',
-        icon: "https://replicate.delivery/pbxt/V0r8BuSYKlZqm1mzkHQpqYrLh5UiDtk39B0YGPFynm3hE7FC/out-0.png", // Writing icon
+        name: 'Digital Marketing',
+        icon: "📈",
         count: '620+',
         color: 'blue',
-        skills: ['SEO', 'Blogging', 'Copywriting', 'Technical Writing'],
-        description: 'Create engaging and accessible content',
-        topCompanies: ['HubSpot', 'Shopify', 'Adobe']
+        skills: ['SEO', 'Social Media', 'PPC', 'Content Strategy'],
+        description: 'Boost your online presence and reach',
+        topCompanies: ['Google', 'HubSpot', 'Hootsuite']
       },
       {
-        name: 'Graphic Design',
-        icon: "https://replicate.delivery/pbxt/W1s9CvTZLlZqm1mzkHQpqYrLh5UiDtk39B0YGPFynm3hE7FC/out-0.png", // Design tools icon
+        name: 'Writing & Translation',
+        icon: "✍️",
         count: '450+',
         color: 'pink',
-        skills: ['UI/UX', 'Illustration', 'Branding', 'Motion Graphics'],
-        description: 'Design inclusive visual experiences',
-        topCompanies: ['Apple', 'Figma', 'Canva']
+        skills: ['Content Writing', 'Copywriting', 'Translation', 'Editing'],
+        description: 'Craft compelling content in any language',
+        topCompanies: ['Grammarly', 'DeepL', 'ProWritingAid']
       },
       {
-        name: 'Virtual Assistance',
-        icon: "https://replicate.delivery/pbxt/X2t0DwUaMlZqm1mzkHQpqYrLh5UiDtk39B0YGPFynm3hE7FC/out-0.png", // Virtual support icon
+        name: 'Video & Animation',
+        icon: "🎥",
         count: '380+',
         color: 'green',
-        skills: ['Admin Support', 'Data Entry', 'Customer Service', 'Scheduling'],
-        description: 'Provide remote administrative support',
-        topCompanies: ['Asana', 'Slack', 'Zoom']
+        skills: ['Video Editing', 'Motion Graphics', '2D/3D Animation', 'VFX'],
+        description: 'Bring your stories to life with video',
+        topCompanies: ['Adobe', 'Blender', 'Final Cut Pro']
+      },
+      {
+        name: 'Music & Audio',
+        icon: "🎵",
+        count: '320+',
+        color: 'yellow',
+        skills: ['Music Production', 'Sound Design', 'Audio Editing', 'Voiceover'],
+        description: 'Create and edit professional audio',
+        topCompanies: ['Spotify', 'Ableton', 'Pro Tools']
+      },
+      {
+        name: 'Programming & Tech',
+        icon: "💻",
+        count: '1200+',
+        color: 'indigo',
+        skills: ['Web Development', 'App Development', 'Software Engineering', 'DevOps'],
+        description: 'Build and maintain digital solutions',
+        topCompanies: ['Microsoft', 'Google', 'Amazon']
+      },
+      {
+        name: 'AI Services',
+        icon: "🤖",
+        count: '250+',
+        color: 'teal',
+        skills: ['Machine Learning', 'Chatbots', 'Computer Vision', 'NLP'],
+        description: 'Leverage AI for innovative solutions',
+        topCompanies: ['OpenAI', 'Google AI', 'Microsoft AI']
+      },
+      {
+        name: 'Consulting',
+        icon: "📊",
+        count: '180+',
+        color: 'orange',
+        skills: ['Business Strategy', 'IT Consulting', 'Management', 'Marketing'],
+        description: 'Get expert advice for your business',
+        topCompanies: ['McKinsey', 'BCG', 'Bain']
+      },
+      {
+        name: 'Data',
+        icon: "📊",
+        count: '300+',
+        color: 'purple',
+        skills: ['Data Analysis', 'Data Science', 'Big Data', 'Data Visualization'],
+        description: 'Turn data into actionable insights',
+        topCompanies: ['Tableau', 'Snowflake', 'Databricks']
+      },
+      {
+        name: 'Business',
+        icon: "💼",
+        count: '200+',
+        color: 'blue',
+        skills: ['Business Plans', 'Market Research', 'Financial Modeling', 'Pitch Decks'],
+        description: 'Grow and manage your business',
+        topCompanies: ['Salesforce', 'HubSpot', 'Zoho']
+      },
+      {
+        name: 'Personal Growth & Hobbies',
+        icon: "🌱",
+        count: '150+',
+        color: 'pink',
+        skills: ['Life Coaching', 'Language Learning', 'Creative Writing', 'Art'],
+        description: 'Develop your skills and passions',
+        topCompanies: ['Duolingo', 'MasterClass', 'Skillshare']
+      },
+      {
+        name: 'Photography',
+        icon: "📷",
+        count: '120+',
+        color: 'green',
+        skills: ['Portrait Photography', 'Product Photography', 'Photo Editing', 'Drone Photography'],
+        description: 'Capture and enhance stunning images',
+        topCompanies: ['Adobe', 'Canon', 'Nikon']
+      },
+      {
+        name: 'Finance',
+        icon: "💰",
+        count: '100+',
+        color: 'yellow',
+        skills: ['Financial Planning', 'Investment Advice', 'Tax Consulting', 'Budgeting'],
+        description: 'Manage and grow your finances',
+        topCompanies: ['Mint', 'QuickBooks', 'TurboTax']
+      },
+      {
+        name: 'End-to-End Projects',
+        icon: "🚀",
+        count: '80+',
+        color: 'indigo',
+        skills: ['Project Management', 'Product Development', 'Team Building', 'Quality Assurance'],
+        description: 'Complete solutions from start to finish',
+        topCompanies: ['Asana', 'Jira', 'Trello']
+      },
+      {
+        name: 'Service Catalog',
+        icon: "📋",
+        count: '500+',
+        color: 'teal',
+        skills: ['Service Design', 'Customer Experience', 'Process Optimization', 'Service Delivery'],
+        description: 'Streamline and improve your services',
+        topCompanies: ['Zendesk', 'Freshworks', 'HubSpot']
       }
     ];
 
@@ -1417,167 +1536,147 @@ function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Featured Categories
+              Explore Our Categories
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Explore opportunities across various fields, each designed to be inclusive and accessible
+              Discover opportunities across various fields, each designed to be inclusive and accessible
             </p>
           </motion.div>
 
           {/* Categories Grid */}
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
-              <Card3D key={category.name}>
-                <motion.div
-                  className="relative h-full"
-                  onHoverStart={() => setHoveredCategory(category.name)}
-                  onHoverEnd={() => setHoveredCategory(null)}
-                >
-                  <motion.button
-                    onClick={() => handleCategoryClick(category)}
-                    className={`group relative w-full h-full p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg 
-                      transition-all duration-300 overflow-hidden`}
-                    whileHover={{ y: -5 }}
-                  >
-                    {/* Enhanced Background Gradient */}
-                    <motion.div
-                      className={`absolute inset-0 bg-gradient-to-br from-${category.color}-500/20 via-${category.color}-500/10 to-transparent`}
-                      initial={{ opacity: 0 }}
-                      animate={{
-                        opacity: hoveredCategory === category.name ? 1 : 0,
-                        scale: hoveredCategory === category.name ? 1.1 : 1
-                      }}
-                      transition={{ duration: 0.3 }}
-                    />
-
-                    {/* Enhanced Icon Animation */}
-                    <motion.div
-                      className="relative z-10 mb-6"
-                      animate={{
-                        scale: hoveredCategory === category.name ? 1.1 : 1,
-                        rotate: hoveredCategory === category.name ? [0, -10, 10, 0] : 0
-                      }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <motion.div 
-                        className={`w-16 h-16 mx-auto rounded-full bg-${category.color}-100 
-                          dark:bg-${category.color}-900/30 flex items-center justify-center
-                          group-hover:shadow-lg group-hover:shadow-${category.color}-500/20`}
-                        animate={{
-                          boxShadow: hoveredCategory === category.name ? 
-                            `0 0 20px ${category.color}40` : "none"
-                        }}
-                      >
-                        <motion.img
-                          src={category.icon}
-                          alt=""
-                          className="w-8 h-8"
-                          animate={{
-                            scale: hoveredCategory === category.name ? 1.2 : 1
-                          }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        />
-                      </motion.div>
-                    </motion.div>
-
-                    {/* Enhanced Content Animation */}
-                    <div className="relative z-10 text-center">
-                      <motion.h3 
-                        className="text-xl font-semibold mb-2 dark:text-white"
-                        animate={{
-                          color: hoveredCategory === category.name ? 
-                            `var(--${category.color}-600)` : "currentColor"
-                        }}
-                      >
-                        {category.name}
-                      </motion.h3>
-                      <motion.p 
-                        className="text-gray-600 dark:text-gray-300 mb-4"
-                        animate={{
-                          opacity: hoveredCategory === category.name ? 0.9 : 0.7
-                        }}
-                      >
-                        {category.description}
-                      </motion.p>
-                      <motion.div 
-                        className="text-lg font-bold text-purple-600 dark:text-purple-400 mb-4"
-                        animate={{
-                          scale: hoveredCategory === category.name ? 1.1 : 1
-                        }}
-                      >
-                        {category.count} jobs
-                      </motion.div>
-
-                      {/* Enhanced Skills Animation */}
-                      <motion.div
-                        initial={false}
-                        animate={{
-                          height: hoveredCategory === category.name ? 'auto' : 0,
-                          opacity: hoveredCategory === category.name ? 1 : 0
-                        }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex flex-wrap gap-2 justify-center mb-4">
-                          {category.skills.map((skill, index) => (
-                            <motion.span
-                              key={skill}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ 
-                                opacity: hoveredCategory === category.name ? 1 : 0,
-                                y: hoveredCategory === category.name ? 0 : 10
-                              }}
-                              transition={{ delay: index * 0.1 }}
-                              className={`px-2 py-1 text-xs rounded-full bg-${category.color}-100 
-                                dark:bg-${category.color}-900/30 text-${category.color}-600 
-                                dark:text-${category.color}-400 transform hover:scale-110 transition-transform`}
-                            >
-                              {skill}
-                            </motion.span>
-                          ))}
-                        </div>
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ 
-                            opacity: hoveredCategory === category.name ? 1 : 0,
-                            y: hoveredCategory === category.name ? 0 : 10
-                          }}
-                          className="text-sm text-gray-500 dark:text-gray-400"
-                        >
-                          Top companies: {category.topCompanies.join(', ')}
-                        </motion.div>
-                      </motion.div>
+              <motion.div
+                key={category.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * categories.indexOf(category) }}
+                onClick={() => setSelectedCategory(category)}
+                className="cursor-pointer"
+              >
+                <Card3D>
+                  <div className="relative h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden p-6">
+                    {/* Icon */}
+                    <div className={`w-16 h-16 mb-4 rounded-lg bg-${category.color}-100 dark:bg-${category.color}-900/20 flex items-center justify-center text-3xl`}>
+                      {category.icon}
                     </div>
 
-                    {/* Enhanced Bottom Indicator */}
-                    <motion.div
-                      className={`absolute bottom-0 left-0 w-full h-1 bg-${category.color}-500`}
-                      initial={{ scaleX: 0 }}
-                      animate={{ 
-                        scaleX: hoveredCategory === category.name ? 1 : 0,
-                        boxShadow: hoveredCategory === category.name ? 
-                          `0 0 10px ${category.color}60` : "none"
-                      }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </motion.button>
-                </motion.div>
-              </Card3D>
+                    {/* Title */}
+                    <h3 className="text-xl font-bold mb-2 dark:text-white">
+                      {category.name}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                      {category.description}
+                    </p>
+
+                    {/* Stats */}
+                    <div className="mb-4">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm bg-${category.color}-100 dark:bg-${category.color}-900/30 text-${category.color}-600 dark:text-${category.color}-400`}>
+                        {category.count} Opportunities
+                      </span>
+                    </div>
+                  </div>
+                </Card3D>
+              </motion.div>
             ))}
           </div>
 
-          {/* View All Button */}
+          {/* Category Detail Modal */}
+          <AnimatePresence>
+            {selectedCategory && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                onClick={() => setSelectedCategory(null)}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-white dark:bg-gray-800 p-8 rounded-xl max-w-3xl w-full relative"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                      <div className={`w-24 h-24 mb-6 rounded-lg bg-${selectedCategory.color}-100 dark:bg-${selectedCategory.color}-900/20 flex items-center justify-center text-4xl`}>
+                        {selectedCategory.icon}
+                      </div>
+                      <h2 className="text-3xl font-bold mb-4 dark:text-white">
+                        {selectedCategory.name}
+                      </h2>
+                      <p className="text-gray-600 dark:text-gray-300 mb-6">
+                        {selectedCategory.description}
+                      </p>
+                    </div>
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Top Skills:</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCategory.skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className={`px-3 py-1 text-sm rounded-full bg-${selectedCategory.color}-100 dark:bg-${selectedCategory.color}-900/30 text-${selectedCategory.color}-600 dark:text-${selectedCategory.color}-400`}
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Top Companies:</h3>
+                        <p className="text-gray-600 dark:text-gray-300">
+                          {selectedCategory.topCompanies?.join(', ') || 'Various top companies'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Opportunities:</h3>
+                        <p className="text-gray-600 dark:text-gray-300">
+                          {selectedCategory.count} available positions
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          // Handle category selection
+                          setSelectedCategory(null);
+                        }}
+                        className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        Explore {selectedCategory.name} Opportunities
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Call to Action */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mt-12"
+            className="text-center mt-16"
           >
             <Link
-              to="/jobs"
-              className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg 
-                hover:bg-purple-700 transform hover:-translate-y-1 transition-all duration-300"
+              to="/categories"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-lg hover:from-purple-700 hover:to-blue-700 transform hover:-translate-y-1 transition-all duration-300"
             >
-              View All Categories
+              Explore All Categories
               <motion.svg
                 className="w-5 h-5"
                 fill="none"
@@ -1705,8 +1804,9 @@ function Home() {
     <div ref={mainRef} className="space-y-16 opacity-0">
       {/* Hero Section - Add Interactive Scroll Indicator */}
       <section ref={heroRef} className="relative h-screen text-center text-white overflow-hidden">
-        {/* Enhanced Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900">
+        {/* Video Background with Tint */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-black/50 z-10"></div> {/* Black tint overlay */}
           <ParticleBackground />
           <motion.video
             initial={{ scale: 1.2 }}
@@ -1716,42 +1816,37 @@ function Home() {
             loop
             muted
             playsInline
-            className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
+            className="absolute top-0 left-0 w-full h-full object-cover"
           >
             <source src="https://replicate.delivery/pbxt/C7y5IBZfRoZqm1mzkHQpqYrLh5UiDtk39B0YGPFynm3hE7FC/out-0.mp4" type="video/mp4" />
           </motion.video>
-          
-          {/* Enhanced Pattern Overlay */}
-          <motion.div 
-            className="absolute inset-0 opacity-10"
-            animate={{
-              backgroundPosition: ['0% 0%', '100% 100%']
-            }}
-            transition={{
-              duration: 50,
-              repeat: Infinity,
-              repeatType: 'reverse'
-            }}
-            style={{
-              backgroundImage: 'url(/images/hero/overlay-pattern.svg)',
-              backgroundSize: '30px 30px'
-            }}
-          />
         </div>
 
         {/* Enhanced Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 backdrop-blur-[2px]" />
         
         {/* Main Content */}
-        <div className="relative z-10 h-full flex flex-col justify-center items-center px-4">
+        <div className="relative z-10 h-full flex  flex-col justify-center items-center px-4">
+          <div className='absolute  t-0 l-0 w-full h-full bg-black/80'></div>
+          
+                  <video
+                    className="absolute w-full h-full transform group-hover:scale-105 transition-transform duration-300"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  
+                  > 
+                    <source src="src/videos/platform-demo.mp4" type="video/mp4" />
+                  </video>
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="max-w-4xl mx-auto"
+            className="absolute max-w-4xl mx-auto"
           >
             <motion.h1 
-              className="text-7xl font-bold mb-8"
+              className=" text-7xl font-bold mb-8"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.4 }}
@@ -1787,7 +1882,7 @@ function Home() {
                   className="text-center"
                   whileHover={{ scale: 1.05 }}
                 >
-                  <span className="text-4xl mb-2 block">{stat.icon}</span>
+                  <span className="text-4xlmb-2 block">{stat.icon}</span>
                   <div className="text-2xl font-bold">{stat.value}</div>
                   <div className="text-sm text-purple-200">{stat.label}</div>
                 </motion.div>
@@ -1796,7 +1891,7 @@ function Home() {
 
             {/* Enhanced CTA Buttons */}
             <motion.div 
-              className="space-x-6"
+              className="space-x-6 "
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.8 }}
@@ -1855,7 +1950,7 @@ function Home() {
           </motion.div>
 
           {/* Enhanced Scroll Indicator */}
-          <motion.div 
+          {/* <motion.div 
             className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1866,19 +1961,16 @@ function Home() {
               transition={{ duration: 1.5, repeat: Infinity }}
               className="flex flex-col items-center"
             >
-              <div className="w-8 h-14 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
-                <motion.div 
-                  className="w-1 h-3 bg-white/50 rounded-full"
-                  animate={{ y: [0, 6, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
-              </div>
-              <p className="mt-2 text-sm text-white/70">Scroll to explore</p>
+              
             </motion.div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </section>
 
+      {/* Categories Section - Moved here */}
+      <CategoriesSection />
+
+      {/* Featured Section */}
       {featuredSection}
 
       {/* Interactive Stats Section */}
@@ -1940,6 +2032,7 @@ function Home() {
         </div>
       </section>
 
+      {/* Success Stories */}
       <SuccessStories />
 
       {/* Impact Section */}
@@ -1970,9 +2063,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Interactive Categories with Magnetic Effect */}
-      <CategoriesSection categories={categories} />
-
       {testimonialTabs}
 
       <PlatformFeatures features={features} />
@@ -1987,9 +2077,9 @@ function Home() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50 }}
-            className="fixed top-24 right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg z-50"
+            // className="fixed top-24 right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg z-50"
           >
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
                 <span className="text-2xl">👋</span>
               </div>
@@ -2005,7 +2095,7 @@ function Home() {
               >
                 ×
               </button>
-            </div>
+            </div> */}
           </motion.div>
         )}
       </AnimatePresence>
@@ -2014,7 +2104,7 @@ function Home() {
       <div className="fixed right-8 z-50 flex flex-col gap-4" style={{ bottom: '2rem' }}>
         {/* Community Button */}
         <motion.div
-          initial={{ scale: 0, rotate: -180 }}
+          initial={{ scale: 0, rotate: 0 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", duration: 1, delay: 0.5 }}
         >
@@ -2048,7 +2138,7 @@ function Home() {
 
         {/* Sign Language Coding Button */}
         <motion.div
-          initial={{ scale: 0, rotate: -180 }}
+          initial={{ scale: 0, rotate: 0 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", duration: 1, delay: 0.7 }}
         >
@@ -2080,30 +2170,18 @@ function Home() {
           </Link>
         </motion.div>
 
-        {/* Chat Button */}
-        <motion.div
+        {/* ==================Chat Button================== */}
+        {/* {/* <motion.div
+          className='hidden'
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", duration: 1, delay: 0.9 }}
         >
-          <ChatBubble className="mt-4" />
-        </motion.div>
+          {/* <ChatBubble className="mt-4 hidden" /> */}
+        {/* </motion.div> */}  
       </div>
 
-      {/* Move Scroll to Explore up */}
-      <motion.div 
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
-      >
-        {/* ... existing scroll to explore content ... */}
-      </motion.div>
-
-      <ChatButton />
-      <AnimatePresence>
-        {isOpen && <Chat />}
-      </AnimatePresence>
+      
     </div>
   );
 }

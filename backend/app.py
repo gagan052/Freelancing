@@ -1,20 +1,28 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-import cv2
-import numpy as np
-import base64
-import json
-from services.sign_language_recognition import SignLanguageRecognizer
-from services.search_service import SearchService
-from services.ide_service import IDEService
-from services.chat_service import ChatService
 import logging
+import json
+import asyncio
+import base64
+import numpy as np
+import cv2
+import os
+from typing import Dict
+from services.gesture_recognition import GestureRecognizer
+from services.code_generator import CodeGenerator
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging and load environment variables
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# Initialize services
+gesture_recognizer = GestureRecognizer()
+code_generator = CodeGenerator(os.getenv('OPENAI_API_KEY'))
+
+# Store active connections
+active_connections: Dict[str, WebSocket] = {}
 
 # Configure CORS
 app.add_middleware(
@@ -25,134 +33,87 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize services with error handling
-try:
-    recognizer = SignLanguageRecognizer()
-    logger.info("Sign Language Recognizer initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize Sign Language Recognizer: {e}")
-    recognizer = None
+@app.get("/")
+async def root():
+    return {"status": "Server is running"}
 
-# Initialize services
-search_service = SearchService()
-ide_service = IDEService()
-
-# Initialize chat service
-chat_service = ChatService()
-
-@app.on_event("startup")
-async def startup_event():
-    if not recognizer:
-        logger.error("Sign Language Recognizer not initialized")
-        raise RuntimeError("Failed to initialize required services")
-
-# Search endpoint
-@app.get("/api/search")
-async def search(query: str, category: str = "all"):
+@app.websocket("/ws/sign-language/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
     try:
-        results = search_service.search(query, category)
-        return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Code execution endpoint
-@app.post("/api/execute-code")
-async def execute_code(code: str, language: str):
-    try:
-        result = await ide_service.execute_code(code, language)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# WebSocket for sign language recognition
-@app.websocket("/ws/sign-language")
-async def websocket_endpoint(websocket: WebSocket):
-    if not recognizer:
-        await websocket.close(code=1011, reason="Service not available")
-        return
-
-    await websocket.accept()
-    logger.info("WebSocket connection established")
-    
-    try:
+        await websocket.accept()
+        active_connections[user_id] = websocket
+        logger.info(f"WebSocket connection accepted for {user_id}")
+        
+        # Send initial success message
+        await websocket.send_json({
+            "status": "connected",
+            "message": "Connected successfully"
+        })
+        
+        # Keep track of continuous recognition state
+        is_recognizing = False
+        
         while True:
             try:
+                # Wait for client message
                 data = await websocket.receive_json()
+                logger.debug(f"Received message from {user_id}")
                 
-                frame_data = data['frame'].split(',')[1]
-                language = data.get('language', 'javascript')
+                if data.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+                    continue
                 
-                nparr = np.frombuffer(base64.b64decode(frame_data), np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if data.get("type") == "start_recognition":
+                    is_recognizing = True
+                    await websocket.send_json({
+                        "status": "success",
+                        "message": "Recognition started"
+                    })
+                    continue
+                    
+                if data.get("type") == "stop_recognition":
+                    is_recognizing = False
+                    await websocket.send_json({
+                        "status": "success",
+                        "message": "Recognition stopped"
+                    })
+                    continue
                 
-                if frame is None:
-                    raise ValueError("Invalid frame data")
+                if data.get("frame") and is_recognizing:
+                    # Decode base64 frame
+                    frame_data = base64.b64decode(data["frame"].split(',')[1])
+                    frame_arr = np.frombuffer(frame_data, np.uint8)
+                    frame = cv2.imdecode(frame_arr, cv2.IMREAD_COLOR)
+                    
+                    # Process frame
+                    result = gesture_recognizer.process_frame(frame)
+                    
+                    # Only send meaningful updates
+                    if result['status'] == 'success' and result['gesture_name'] != 'NO_GESTURE':
+                        # Generate code if needed
+                        code_result = await code_generator.generate_code(
+                            result['gesture_sequence'],
+                            language=data.get("language", "javascript")
+                        )
+                        result.update(code_result)
+                        
+                        # Send result
+                        await websocket.send_json(result)
                 
-                result = recognizer.process_frame(frame, language)
-                
-                _, buffer = cv2.imencode('.jpg', result['frame'])
-                encoded_frame = base64.b64encode(buffer).decode('utf-8')
-                
-                await websocket.send_json({
-                    'command': result['command'],
-                    'confidence': result['confidence'],
-                    'gesture_name': result['gesture_name'],
-                    'description': result['description'],
-                    'frame': f'data:image/jpeg;base64,{encoded_frame}'
-                })
-                
-            except json.JSONDecodeError:
-                logger.error("Invalid JSON received")
-                await websocket.send_json({
-                    'error': 'Invalid data format'
-                })
-                
+            except WebSocketDisconnect:
+                logger.info(f"Client {user_id} disconnected")
+                break
             except Exception as e:
-                logger.error(f"Frame processing error: {e}")
+                logger.error(f"Error processing message: {str(e)}")
                 await websocket.send_json({
-                    'error': 'Frame processing failed'
+                    "status": "error",
+                    "message": f"Failed to process message: {str(e)}"
                 })
                 
-    except WebSocketDisconnect:
-        logger.info("Client disconnected")
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error: {str(e)}")
     finally:
-        try:
-            await websocket.close()
-        except:
-            pass
-
-# Add chat endpoints
-@app.websocket("/ws/chat/{user_id}")
-async def chat_websocket(websocket: WebSocket, user_id: str):
-    await websocket.accept()
-    logger.info(f"Chat WebSocket connection established for user {user_id}")
-    
-    try:
-        while True:
-            try:
-                data = await websocket.receive_json()
-                message = data.get('message')
-                
-                if not message:
-                    raise ValueError("Message is required")
-                
-                response = await chat_service.get_response(user_id, message)
-                
-                await websocket.send_json(response)
-                
-            except json.JSONDecodeError:
-                logger.error("Invalid JSON received in chat")
-                await websocket.send_json({
-                    'error': 'Invalid message format'
-                })
-                
-    except WebSocketDisconnect:
-        logger.info(f"Chat client {user_id} disconnected")
-    except Exception as e:
-        logger.error(f"Chat WebSocket error: {e}")
-    finally:
+        active_connections.pop(user_id, None)
         try:
             await websocket.close()
         except:
@@ -160,9 +121,4 @@ async def chat_websocket(websocket: WebSocket, user_id: str):
 
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "healthy",
-        "services": {
-            "recognizer": recognizer is not None
-        }
-    } 
+    return {"status": "healthy"} 

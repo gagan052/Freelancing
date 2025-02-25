@@ -20,4 +20,56 @@ export function announceToScreenReader(message) {
   setTimeout(() => {
     document.body.removeChild(announcement);
   }, 1000);
-} 
+}
+
+export const setupAccessibility = () => {
+  // Keyboard shortcuts
+  const shortcuts = {
+    'ctrl+shift+r': toggleRecording,
+    'ctrl+shift+s': stopRecording,
+    'ctrl+shift+c': clearEditor,
+    'ctrl+shift+h': toggleHistory,
+  };
+
+  // Voice commands
+  const voiceCommands = {
+    'start recording': toggleRecording,
+    'stop recording': stopRecording,
+    'clear editor': clearEditor,
+    'show history': toggleHistory,
+  };
+
+  // Screen reader announcements
+  const announceGesture = (gesture) => {
+    const announcement = `Detected ${gesture.name} with ${Math.round(gesture.confidence * 100)}% confidence`;
+    const utterance = new SpeechSynthesisUtterance(announcement);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  return {
+    shortcuts,
+    voiceCommands,
+    announceGesture,
+  };
+};
+
+// Gesture feedback
+export const provideGestureFeedback = (gesture) => {
+  // Visual feedback
+  const feedback = document.createElement('div');
+  feedback.className = 'gesture-feedback';
+  feedback.textContent = gesture.name;
+  document.body.appendChild(feedback);
+  
+  // Haptic feedback (if available)
+  if ('vibrate' in navigator) {
+    navigator.vibrate(200);
+  }
+  
+  // Audio feedback
+  const audio = new Audio('/sounds/gesture-detected.mp3');
+  audio.play();
+  
+  // Remove feedback after animation
+  setTimeout(() => feedback.remove(), 1000);
+}; 

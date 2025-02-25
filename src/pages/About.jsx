@@ -13,6 +13,10 @@
 {/* ================================ Contact Section ================================*/}
 
 function About() {
+  const teamMembers = [
+    // ... your team data ...
+  ];
+
   return (
     <div className="max-w-4xl mx-auto px-4">
       <h1 className="text-4xl font-bold mb-8 dark:text-white">About EnableFreelance</h1>
@@ -47,6 +51,27 @@ function About() {
             support@enablefreelance.com
           </a>
         </p>
+      </div>
+
+      <div className="team-section">
+        <h2>Our Team</h2>
+        <div className="team-grid">
+          {teamMembers.map((member, index) => (
+            <div 
+              className="team-card"
+              key={index}
+              style={{ backgroundImage: `url(${member.image})` }}
+            >
+              <div className="team-card-overlay">
+                <h3>{member.name}</h3>
+                <p>{member.role}</p>
+                <div className="social-links">
+                  {/* Add social icons */}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

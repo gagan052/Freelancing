@@ -1,33 +1,44 @@
 # Dependencies
-node_modules
-/.pnp
-.pnp.js
+node_modules/
+venv/
+__pycache__/
+*.pyc
 
-# Testing
-/coverage
-
-# Production
-/dist
-/build
-
-# Misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment variables
 .env
+.env.local
+.env.*.local
 
+# Build files
+dist/
+build/
+*.egg-info/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw? 
+# System files
+.DS_Store
+Thumbs.db
+
+# ML models
+backend/models/*.h5
+backend/models/*.pb
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage reports
+coverage/
+.coverage
+htmlcov/
